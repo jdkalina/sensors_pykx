@@ -18,7 +18,7 @@ def get_runs(tool_ids,start_time,end_time):
             kx.Column('date').within(start_time, end_time),
             kx.Column('tool_id').isin(tool_ids),
             kx.Column('start_time') >= start_time,
-            kx.Column('start_time') <= end_time  # Corrected from >= to <=
+            kx.Column('end_time') <= end_time  # Corrected from >= to <=
         ]
         )
     r = kx.q.xkey('tool_id', r)
