@@ -1,6 +1,6 @@
 import pykx as kx
 
-tool_name = "KXTest_PRODUCERGT18_CHA_1*"
+tool_name = "'IMV20J*"
 
 db = kx.DB(path='database')
 
@@ -27,7 +27,7 @@ sinfo = db.ees_sensor_lookup.select(columns = [kx.Column('id').name('sensor_id')
                                                 ],
                                                 where = [
                                         kx.Column('proc_type_id').isin(tinfo['proc_type_id']),
-                                        kx.Column("name").like("*Step0*")
+                                        kx.Column("name").like("*Pressure*")
                                         ]) # returns back sensor_id 2394585
 
 kx.q['temptable'] = kx.q.lj(kx.q.xkey('proc_type_id',tinfo),kx.q.xkey('proc_type_id',sinfo))
@@ -45,7 +45,7 @@ runctx = db.ees_run_context.select(columns=['tool_id','run_id','start_time','ctx
                                        kx.Column('tool_id').isin(tinfo['tool_id']),
                                        kx.Column('ctx_id').isin(cinfo['id']),
                                        kx.Column('start_time').within(starttime,endtime),
-                                       kx.Column('ctx_value').like('APFm nSR cln1*')
+                                       kx.Column('ctx_value').like(''Process.QA*')
                                    ])
 
 sd = db.ees_sensor_data.select(columns=['tool_id','sensor_id','ts_id','time_stamps','data_float'],
