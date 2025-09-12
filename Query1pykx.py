@@ -10,8 +10,8 @@ def kx_dt(text):
 def kx_time(text): 
     return kx.q(f'`datetime${text}')
 
-start = "2025.05.30"
-end = "2025.05.31"
+start = "2025.07.20"
+end = "2025.07.21"
 stdt = kx_dt(start)
 enddt = kx_dt(end)
 starttime = kx_time(start)
