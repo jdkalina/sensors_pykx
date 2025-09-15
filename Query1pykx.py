@@ -17,7 +17,7 @@ endtime = kx_time(end)
 
 tinfo = db.ees_tool_lookup.select(columns=['tool_id','proc_type_id','tool_name'], where=[kx.Column('tool_name').like(tool_name)]) # returns back proc_type_id of 7139
 
-sinfo = db.ees_sensor_lookup.select(columns = [kx.Column('id').name('sensor_id'),kx.Column('name'),kx.Column('proc_type_id')],where = [kx.Column('proc_type_id').isin(tinfo['proc_type_id']),kx.Column("name").like("*Pressure*")]) # returns back sensor_id 2394585
+sinfo = db.ees_sensor_lookup.select(columns = [kx.Column('id').name('sensor_id'),kx.Column('name'),kx.Column('proc_type_id')],where = [kx.Column('proc_type_id').isin(tinfo['proc_type_id']),kx.Column("name").like("*Pressure*").like("IG*")]) # returns back sensor_id 2394585
 
 kx.q['temptable'] = kx.q.lj(kx.q.xkey('proc_type_id',tinfo),kx.q.xkey('proc_type_id',sinfo))
 ts = kx.q('select name, tool_id, tool_name, proc_type_id, sensor_id, ts_id:sensor_id+4294967296*tool_id+sensor_id<0 from temptable')
