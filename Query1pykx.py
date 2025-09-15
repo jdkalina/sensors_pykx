@@ -1,6 +1,6 @@
 import pykx as kx
 
-tool_name = "'IMV20J*"
+tool_name = "IMV20J*"
 
 db = kx.DB(path='database')
 
