@@ -2,7 +2,7 @@ import pykx as kx
 
 def main():
   tool_name = "IMV20J*"
-  db = kx.DB(path='database')
+  db = kx.DB(path='/data/kdb')
   def kx_dt(text):return kx.q(f'`date${text}')
   def kx_time(text):return kx.q(f'`datetime${text}')
   
@@ -20,12 +20,10 @@ def main():
   kx.q['temptable'] = kx.q.lj(kx.q.xkey('proc_type_id',tinfo),kx.q.xkey('proc_type_id',sinfo))
   ts = kx.q('select name, tool_id, tool_name, proc_type_id, sensor_id, ts_id:sensor_id+4294967296*tool_id+sensor_id<0 from temptable')
   
-  cinfo = db.ees_sensor_lookup.select(columns = [kx.Column('proc_type_id'),kx.Column("id"),kx.Column("name").name('recipe')],where=[kx.Column('proc_type_id').isin(tinfo['proc_type_id']),kx.Column('name').like('Recipe')])
+  cinfo = db.ees_sensor_lookup.select(columns = [kx.Column('proc_type_id'),kx.Column("id"),kx.Column("name").name('recipe')],where=[kx.Column('proc_type_id').isin(tinfo['proc_type_id']),kx.Column('name').like('Recipe')]
   
-  runctx = db.ees_run_context.select(columns=['tool_id','run_id','start_time','ctx_value'],where=[kx.Column('date').within(stdt,enddt),kx.Column('tool_id').isin(tinfo['tool_id']),kx.Column('ctx_id').isin(cinfo['id']),kx.Column('start_time').within(starttime,endtime),kx.Column('ctx_value').like('Process.QA*')])
-  
-  sd = db.ees_sensor_data.select(columns=['tool_id','sensor_id','ts_id','time_stamps','data_float'],where=[kx.Column('date').within(starttime, endtime),kx.Column('ts_id').isin(ts['ts_id']),kx.Column('min_time') >= runctx['start_time'].min()])
-  sd = kx.q.ungroup(sd)
+  runctx = db.ees_run_context.select(columns=['tool_id','run_id','start_time','ctx_value'],where=[kx.Column('date').within(stdt,enddt),kx.Column('tool_id').isin(tinfo['tool_id']),kx.Column('ctx_id').isin(cinfo['id']),kx.Column('start_time').within(starttime,endtime),kx.Column('ctx_value').like('Process.QA*')])  
+  sd = db.ees_sensor_data.select(columns=['tool_id','sensor_id','ts_id','time_stamps','data_float'],where=[kx.Column('date').within(starttime, endtime),kx.Column('ts_id').isin(ts['ts_id']),kx.Column('min_time') >= runctx['start_time'].min()])  sd = kx.q.ungroup(sd)
   # Key the field to join TSID into ctx_info for recipe info
   c = kx.q.xkey('proc_type_id', cinfo)
   ts = kx.q.xkey('proc_type_id', ts)
@@ -37,3 +35,4 @@ def main():
   sd = kx.q.xkey('ts_id', sd)
   df = kx.q.lj(sd,df)
   df = kx.q.unkey(0,df)
+  return df
