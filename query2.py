@@ -20,14 +20,14 @@ def main():
     
     # Step 3: Get sensors with pressure in name (rfab_ds.signal)
     s = db.ees_sensor_lookup.select(
-        columns=['id', 'name', 'proc_type_id'],
+        columns=[kx.Column('id').name('signal_id'), kx.Column('name'), kx.Column('proc_type_id')],
         where=[
             kx.Column('proc_type_id').isin(etc['proc_type_id']),
             kx.Column('id').isin(ep['signal_id']),
             kx.Column('name').lower().like('*pressure*')
             ])
     
-    ep = leftMerge(s,ep,'id','signal_id')
+    ep = leftMerge(s,ep,'signal_id','signal_id')
     dates = kx.q('date')
     counter = 0
     
