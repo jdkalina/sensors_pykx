@@ -15,8 +15,8 @@ def main():
     
     # Step 2: Filter by equip_process name = 'DataCollector' (rfab_ds.equip_process)
     # Assuming this filter is already applied in the tool lookup or proc_type_id represents this
-    etc = db.pg_ees_equip_templ_chamber_def.select(columns=['name','id','proc_type_id'], where=[kx.Column('id').isin(et['id']), kx.Column('name').like('DataCollector')])
-    ep = db.equip_signal_persisted.select(columns= [kx.Column("id").name('ts_id'),kx.Column("signal_id"),kx.Column("equip_id")],where=[kx.Column('equip_id').isin(et['id'])])
+    etc = db.pg_ees_equip_templ_chamber_def.select(columns=['name','id','proc_type_id'], where=[kx.Column('id').isin(et['equip_id']), kx.Column('name').like('DataCollector')])
+    ep = db.equip_signal_persisted.select(columns= [kx.Column("id").name('ts_id'),kx.Column("signal_id"),kx.Column("equip_id")],where=[kx.Column('equip_id').isin(et['equip_id'])])
     
     # Step 3: Get sensors with pressure in name (rfab_ds.signal)
     s = db.ees_sensor_lookup.select(
