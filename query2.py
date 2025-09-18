@@ -36,7 +36,7 @@ def main():
             columns=['tool_id','tr_id','run_id','start_time','ctx_value'],
             where=[
                 kx.Column('date').isin(i),
-                kx.Column('tool_id').isin(et['id']),
+                kx.Column('tool_id').isin(et['equip_id']),
                 kx.Column('ctx_value').lower().like('*process.qa*')
                 ]) 
         if r.shape[0] == 0:
@@ -58,7 +58,7 @@ def main():
                 break
 
     df = leftMerge(df, ep, 'ts_id', 'ts_id')
-    df = leftMerge(df, et, 'id','id')
+    df = leftMerge(df, et, 'equip_id','equip_id')
 
  
     
