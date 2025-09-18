@@ -58,8 +58,9 @@ def main():
                 break
 
 
-
-    df = leftMerge(df, ep, 'ts_id', 'id')
-    df = leftMerge(df, et, 'equip_id','id')
+    ep = ep.rename(columns={'id':'ts_id'})
+    et = et.rename(columns={'id':'equip_id'})
+    df = leftMerge(df, ep, 'ts_id', 'ts_id')
+    df = leftMerge(df, et, 'equip_id','equip_id')
     
     return df
