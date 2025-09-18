@@ -11,19 +11,19 @@ def main():
     db = kx.DB(path='/data/kdb')
     
     # Step 1: Get tools matching pattern (rfab_ds.equip) Should be ok
-    et = db.pg_ees_tool.select(columns=['name', 'id'], where=[kx.Column('name').like('IMV2*')])
+    et = db.pg_ees_tool.select(columns=[kx.Column('name'), kx.Column('id').name('equip_id')], where=[kx.Column('name').like('IMV2*')])
     
     # Step 2: Filter by equip_process name = 'DataCollector' (rfab_ds.equip_process)
     # Assuming this filter is already applied in the tool lookup or proc_type_id represents this
     etc = db.pg_ees_equip_templ_chamber_def.select(columns=['name','id','proc_type_id'], where=[kx.Column('id').isin(et['id']), kx.Column('name').like('DataCollector')])
-    ep = db.equip_signal_persisted.select(columns= ["id","signal_id"],where=[kx.Column('equip_id').isin(et['id'])])
+    ep = db.equip_signal_persisted.select(columns= [kx.Column("id").name('ts_id'),kx.Column("signal_id"),kx.Column("equip_id")],where=[kx.Column('equip_id').isin(et['id'])])
     
     # Step 3: Get sensors with pressure in name (rfab_ds.signal)
     s = db.ees_sensor_lookup.select(
         columns=[kx.Column('id').name('signal_id'), kx.Column('name'), kx.Column('proc_type_id')],
         where=[
             kx.Column('proc_type_id').isin(etc['proc_type_id']),
-            kx.Column('id').isin(ep['signal_id']),
+            kx.Column('id').isin(ep['signal_id']).name('signal_id'),
             kx.Column('name').lower().like('*pressure*')
             ])
     
@@ -45,7 +45,7 @@ def main():
             er = db.ees_run.select(columns=[kx.Column('end_time').max(),kx.Column('start_time').min()],where=[ kx.Column('date').isin(i), kx.Column('tr_id').isin(r['tr_id'])])
             start_time = er['start_time'].min()
             end_time = er['end_time'].max()
-            sd = db.ees_sensor_data.select(columns=['tool_id','ts_id, data_float'], where=[kx.Column('date')==i, kx.Column('ts_id').isin(ep['id']), kx.Column('min_time') >= start_time, kx.Column('max_time')<= end_time])
+            sd = db.ees_sensor_data.select(columns=['tool_id','ts_id, data_float'], where=[kx.Column('date')==i, kx.Column('ts_id').isin(ep['ts_id']), kx.Column('min_time') >= start_time, kx.Column('max_time')<= end_time])
             sd = leftMerge(sd,r,'tool_id','tool_id')
             if counter == 0:
                 df = sd.copy()
@@ -57,10 +57,9 @@ def main():
                 print(f'{limit} records reached. ending loop')
                 break
 
-
-    ep = ep.rename(columns={'id':'ts_id'})
-    et = et.rename(columns={'id':'equip_id'})
     df = leftMerge(df, ep, 'ts_id', 'ts_id')
-    df = leftMerge(df, et, 'equip_id','equip_id')
+    df = leftMerge(df, et, 'id','id')
+
+ 
     
     return df
