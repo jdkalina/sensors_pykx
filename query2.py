@@ -1,5 +1,11 @@
 import pykx as kx
 
+def leftMerge(left, right, lefton, righton):
+    left = kx.q.xkey(lefton, left)
+    right = kx.q.xkey(righton, right)
+    left = kx.q.lj(left, right)
+    return kx.q.unkey(0,left)
+
 def main():
     # Initialize database connection
     db = kx.DB(path='/data/kdb')
@@ -13,35 +19,55 @@ def main():
     ep = db.equip_signal_persisted.select(columns= ["id","signal_id"],where=[kx.Column('equip_id').isin(et['id'])])
     
     # Step 3: Get sensors with pressure in name (rfab_ds.signal)
-    s = db.ees_sensor_lookup.select(columns=['id', 'name', 'proc_type_id'],where=[kx.Column('proc_type_id').isin(etc['proc_type_id']),kx.Column('id').isin(ep['signal_id']),kx.Column('name').lower().like('*pressure*')])
+    s = db.ees_sensor_lookup.select(
+        columns=['id', 'name', 'proc_type_id'],
+        where=[
+            kx.Column('proc_type_id').isin(etc['proc_type_id']),
+            kx.Column('id').isin(ep['signal_id']),
+            kx.Column('name').lower().like('*pressure*')
+            ])
     
     # Step 4: Get process runs with recipe filter (rfab_ds.process_run)
     #r = db.pg_ees_process_type.select(columns=['id', 'start_time', 'end_time', 'recipe'],where=[kx.Column('id').isin(et['id']),kx.Column('recipe').lower().like('*process.qa*')])
-    r = db.ees_run_context.select(columns=['tool_id','tr_id','run_id','start_time','ctx_value'],where=[kx.Column('tool_id').isin(et['id']),kx.Column('ctx_value').lower().like('*process.qa*')]) 
+    r = db.ees_run_context.select(
+        columns=['tool_id','tr_id','run_id','start_time','ctx_value'],
+        where=[
+            kx.Column('tool_id').isin(et['id']),
+            kx.Column('ctx_value').lower().like('*process.qa*')
+            ]) 
     # iterate here. get the starttimes for each day.
-    
-    #end time
-    er = db.ees_run.select(columns=kx.Column('end_time').max(),where=[kx.Column('date').isin(r['start_time'].date ), kx.Column('tr_id').isin(r['tr_id'])])
-    
-    #Merge here, get end_time
-    
-    start_time = r['start_time'].min()
-    start_date = start_time.date
-    end_time = er['end_time'].max()
-    end_date = end_time.date
-        
-    #iterate over days to be safe. stop at 100,000 records
-		sd = db.ees_sensor_data.select(columns=['ts_id, data_float'], where=[kx.Column('ts_id').isin(ep['id'])])    
 
-    def leftMerge(left, right, lefton, righton):
-        left = kx.q.xkey(lefton, left)
-        right = kx.q.xkey(righton, right)
-        left = kx.q.lj(left, right)
-        return kx.q.unkey(0,left)
+    dates = kx.q('date')
+    counter = 0
+    for i in dates:
+        r = db.ees_run_context.select(
+            columns=['tool_id','tr_id','run_id','start_time','ctx_value'],
+            where=[
+                kx.Column('date').isin(i),
+                kx.Column('tool_id').isin(et['id']),
+                kx.Column('ctx_value').lower().like('*process.qa*')
+                ]) 
+        if r.shape[0] == 0:
+            continue
+        else:
+            er = db.ees_run.select(columns=[kx.Column('end_time').max(),kx.Column('start_time').min()],where=[ kx.Column('date').isin(i), kx.Column('tr_id').isin(r['tr_id'])])
+            start_time = er['start_time'].min()
+            end_time = er['end_time'].max()
+            sd = db.ees_sensor_data.select(columns=['tool_id','ts_id, data_float'], where=[kx.Column('date')==i, kx.Column('ts_id').isin(ep['id']), kx.Column['min_time'] >= start_time, kx.Column['max_time']<= end_time])
+            sd = leftMerge(sd,r,'tool_id','tool_id')
+            if counter == 0:
+                df = sd.copy()
+            else:
+                df = kx.q.uj(df,sd)
+            counter += sd.shape[0]
+            print(counter)
+            if counter >= limit:
+                print(f'{limit} records reached. ending loop')
+                break
 
-    sd = leftMerge(sd, ep, 'ts_id', 'id')
-    sd = leftMerge(sd, et, 'equip_id','id')
-    sd = leftMerge(sd, r, 'equip_id','equip_id')
-    sd = leftMerge(sd, s, 'signal_id','id')
+
+
+    df = leftMerge(df, ep, 'ts_id', 'id')
+    df = leftMerge(df, et, 'equip_id','id')
     
-    return sd
+    return df
