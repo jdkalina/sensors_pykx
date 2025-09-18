@@ -27,16 +27,6 @@ def main():
             kx.Column('name').lower().like('*pressure*')
             ])
     
-    # Step 4: Get process runs with recipe filter (rfab_ds.process_run)
-    #r = db.pg_ees_process_type.select(columns=['id', 'start_time', 'end_time', 'recipe'],where=[kx.Column('id').isin(et['id']),kx.Column('recipe').lower().like('*process.qa*')])
-    r = db.ees_run_context.select(
-        columns=['tool_id','tr_id','run_id','start_time','ctx_value'],
-        where=[
-            kx.Column('tool_id').isin(et['id']),
-            kx.Column('ctx_value').lower().like('*process.qa*')
-            ]) 
-    # iterate here. get the starttimes for each day.
-
     dates = kx.q('date')
     counter = 0
     for i in dates:
