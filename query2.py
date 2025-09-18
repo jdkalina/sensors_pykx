@@ -30,7 +30,7 @@ def main():
     ep = leftMerge(s,ep,'signal_id','signal_id')
     dates = kx.q('date')
     counter = 0
-    
+    limit=100000
     for i in dates:
         r = db.ees_run_context.select(
             columns=['tool_id','tr_id','run_id','start_time','ctx_value'],
